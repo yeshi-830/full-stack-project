@@ -2,51 +2,61 @@
 import { useState } from "react";
 import "./App.css";
 
+const API_URL = "http://localhost:5000/api/users";
+
 function App() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (event) => {
     event.preventDefault();
+
     setMessage("");
+    setIsError(false);
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/users", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+        }),
       });
 
-   const text = await response.text();
+      const contentType = response.headers.get("content-type") || "";
 
-let data;
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          "The server did not return JSON. Check the backend API route."
+        );
+      }
 
-try {
-  data = JSON.parse(text);
-} catch {
-  throw new Error(
-    "The server returned HTML instead of JSON. Check the API URL and backend route."
-  );
-}
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Registration failed.");
       }
 
-      setMessage(data.message);
+      setMessage(data.message || "Registration successful!");
       setName("");
       setEmail("");
     } catch (error) {
-      setMessage(
-        error.message === "Failed to fetch"
-          ? "Cannot connect to the backend. Check that your server is running."
-          : error.message
-      );
+      setIsError(true);
+
+      if (error.message === "Failed to fetch") {
+        setMessage(
+          "Cannot connect to the backend. Make sure the server is running on port 5000."
+        );
+      } else {
+        setMessage(error.message || "Something went wrong.");
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +76,10 @@ try {
             placeholder="Enter your full name"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            autoComplete="name"
             required
+            minLength={2}
+            maxLength={100}
           />
 
           <label htmlFor="email">Email address</label>
@@ -76,7 +89,9 @@ try {
             placeholder="Enter your email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
             required
+            maxLength={254}
           />
 
           <button type="submit" disabled={loading}>
@@ -85,7 +100,10 @@ try {
         </form>
 
         {message && (
-          <p className="message" role="status">
+          <p
+            className={`message ${isError ? "error" : "success"}`}
+            role="status"
+          >
             {message}
           </p>
         )}
@@ -95,3 +113,4 @@ try {
 }
 
 export default App;
+
