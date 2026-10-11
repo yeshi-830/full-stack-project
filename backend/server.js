@@ -64,11 +64,13 @@ app.get("/api/users", async (req, res) => {
 });
 
 
-// Register a user
+
+/* Register a user */
 app.post("/api/users", async (req, res) => {
   try {
     const { name, email } = req.body || {};
 
+    // Validate input
     if (
       typeof name !== "string" ||
       typeof email !== "string" ||
@@ -83,6 +85,19 @@ app.post("/api/users", async (req, res) => {
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
 
+    // Check whether the email already exists
+    const [existingUsers] = await db.execute(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [cleanEmail]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({
+        message: "This email is already registered.",
+      });
+    }
+
+    // Register the new user
     const [result] = await db.execute(
       "INSERT INTO users (name, email) VALUES (?, ?)",
       [cleanName, cleanEmail]
@@ -95,20 +110,20 @@ app.post("/api/users", async (req, res) => {
       email: cleanEmail,
     });
   } catch (error) {
+    // Handle duplicate email errors safely
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
         message: "This email is already registered.",
       });
     }
 
-    console.error("Registration error:", error.message);
+    console.error("Registration error:", error);
 
     return res.status(500).json({
-      message: "Unable to register user. Check the backend terminal.",
+      message: "Registration failed. Please try again.",
     });
   }
 });
-
 // Start server
 async function startServer() {
   try {
