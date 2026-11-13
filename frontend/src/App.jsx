@@ -179,6 +179,16 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!modalOpen) return undefined;
+    document.getElementById("member-name")?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !saving) setModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modalOpen, saving]);
+
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
     return users
