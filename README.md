@@ -1,81 +1,92 @@
-# Full Stack Project
+# Memberdesk
 
-A full-stack web application built with React, Node.js, Express, and MySQL.
+A responsive member directory for registering and managing a community. The React dashboard reads and writes members through an Express API backed by MySQL.
 
-## Features
+## What it does
 
-- React frontend
-- REST API built with Express.js
-- MySQL database integration
-- Environment variable configuration
-- Separate frontend and backend folders
+- View real member totals, recent sign-ups, and a seven-day registration chart.
+- Add, edit, and remove members; duplicate email addresses are rejected.
+- Search members by name or email, sort the directory, and export the visible results to CSV.
+- Switch between light and dark themes; the preference is saved in the browser.
+- Adapt the directory, navigation, and forms to desktop, tablet, and mobile screens.
 
-## Technologies Used
+The app's existing data model contains only a name, email, and registration date. It does not have authentication, roles, passwords, or an activity/notification store.
 
-- React
-- Vite
-- Node.js
-- Express.js
-- MySQL
-- Git and GitHub
+## Requirements
 
-## Project Structure
+- Node.js 20.19+ or 22.12+ (required by the installed Vite 8 toolchain)
+- MySQL 8+
+- npm
 
-```text
-full-stack-project/
-├── backend/
-│   ├── server.js
-│   ├── package.json
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   ├── index.html
-│   └── package.json
-└── .gitignore
+## Set up the database
+
+Create the database if it does not already exist:
+
+```sql
+CREATE DATABASE full_stack_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-## Getting Started
+Apply the schema in [`backend/schema.sql`](backend/schema.sql) to that database. For example, from a terminal with the MySQL command-line client installed:
 
-### Prerequisites
+```text
+mysql -u root -p full_stack_db < backend/schema.sql
+```
 
-- Node.js and npm
-- MySQL Server
+If you already have the `users` table, keep your data; `CREATE TABLE IF NOT EXISTS` does not replace an existing table.
 
-### Backend Setup
+## Configure and run
 
-1. Open a terminal in the `backend` folder.
-2. Install dependencies:
+1. Copy `backend/.env.example` to `backend/.env` and set your MySQL connection details.
+2. In one terminal, install and start the API:
 
    ```bash
+   cd backend
    npm install
-   ```
-
-3. Create a `.env` file with your database configuration.
-4. Start the backend:
-
-   ```bash
-   node server.js
-   ```
-
-### Frontend Setup
-
-1. Open another terminal in the `frontend` folder.
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-
-   ```bash
    npm run dev
    ```
 
-## Security
+3. In a second terminal, install and start the web app:
 
-Keep database passwords and other secrets in your local `.env` file. Never commit real credentials to GitHub.
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-## Author
+4. Open the local URL printed by Vite (by default, `http://localhost:5173`). Vite proxies `/api` requests to `http://localhost:5000`.
 
-GitHub: [yeshi-830](https://github.com/yeshi-830)
+The backend requires an available MySQL database and the `users` table before it starts. Set `PORT` to change the API port. Set `API_PROXY_TARGET` in the frontend environment if the API runs somewhere other than `http://localhost:5000`. Set `CORS_ORIGINS` to a comma-separated list of allowed browser origins when calling the API directly; the default is `http://localhost:5173`.
+
+## Checks
+
+Run the backend's validation and API tests:
+
+```bash
+cd backend
+npm test
+```
+
+Build and lint the frontend:
+
+```bash
+cd frontend
+npm run build
+npm run lint
+```
+
+## Production and security
+
+The current app is a member directory, **not an authenticated account system**: it stores no passwords or roles, and the member list and write endpoints do not require a login. Do not expose it to untrusted users or deploy it with personal member data until you add authentication, authorization, and an appropriate privacy policy. CORS is not an access-control mechanism. Production hosting also needs HTTPS, a production database, and a frontend/API deployment configured for the same origin or the correct API URL.
+
+## Project layout
+
+```text
+backend/
+  schema.sql          MySQL users-table schema
+  server.js           Express API and MySQL connection pool
+  server.test.js      API input validation tests
+frontend/
+  src/App.jsx         Dashboard, member directory, and CRUD interactions
+  src/App.css         Responsive components and theme styles
+  src/index.css       Global styles
+```
